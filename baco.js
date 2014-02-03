@@ -17,9 +17,6 @@ function getType(){
 	}
 }
 
-alert(getType());
-
-
 var log = function(){};
 if (console){
 	log = console.log;
@@ -33,34 +30,40 @@ var two = new Two({
 
 
 
+
 var k = Math.min(two.height, two.width)/10;
 var c = [two.width/2, two.height/2];
 
-var head = two.makeCircle(c[0], c[1], k/1.8);
-head.fill = '#ff9000';
-head.linewidth = 1;
+
+var headC = two.makeCircle(0, 0, k/1.8);
+headC.fill = '#ffff00';
+headC.linewidth = 1;
 //head.noStroke();
-head.stroke = '#cc7000'
+headC.stroke = 'rgba(0,0,0,0.5)';
 
-var body = [];
-body.push(head);
+var eye1 = two.makeCircle(k/4,k/4, k/8);
+eye1.fill='#000000';
 
-var history = [];
+var eye2 = two.makeCircle(k/4,-k/4, k/8);
+eye2.fill='#000000';
 
-var moves = [[1,0]];
+var head =  two.makeGroup(headC, eye1, eye2);
+
+head.translation.set(c[0],c[1]);
 
 var g0 = [c[0]-parseInt(c[0]/k)*k, c[1]-parseInt(c[1]/k)*k];
 
 var gx = g0[0], gy = g0[1];
 
-var vx = [gx-k], vy = [gy-k];
+var vx = [gx-2*k, gx-k], vy = [gy-2*k, gy-k];
 
 var free = [];
 
+var growFactor = 0;
 
-while (gy <= two.height+k) {
+while (gy <= two.height+2*k) {
 	gx = g0[0];
-	while(gx <= two.width+k){
+	while(gx <= two.width+2*k){
 		if (!_(vx).contains(gx)){
 			vx.push(gx);
 		}
@@ -71,15 +74,26 @@ while (gy <= two.height+k) {
 	gy+=k;
 }
 
-var curd = [1,0];
+function grow(dist){
+	if (growFactor>0){
+		var tail = body[body.length-1]
+		var bp = two.makeCircle(c[0], c[1], k/2.2);
+		bp.fill = '#ffff00';
+		bp.linewidth = 2;
+		//head.noStroke();
+		bp.stroke = 'rgba(128,64,0,0.8)';
+		taild = curds[curds.length-1];
+		curds.push(taild);
+		moves.push([taild]);
 
-function grow(){
-	var bp = two.makeCircle(c[0], c[1], k/2.2);
-	bp.fill = '#ff9000';
-	bp.linewidth = 1;
-	//head.noStroke();
-	bp.stroke = '#cc7000'
-	body.push(bp);	
+		bptr = move(dist*taild[0]*-1,dist*taild[1]*-1, tail.translation.x, tail.translation.y);
+
+		bp.translation.set(bptr[0], bptr[1]);
+
+		body.push(bp);	
+		growFactor--;		
+	}
+
 }
 
 
@@ -114,113 +128,134 @@ function onKeyDown(event){
 	switch(keyCode){
     case 68:  //d
     case 39:
-    if (curd[0]==0) {
-    	moves.push([1,0]);    		
-    }
+    	moves[0].push([1,0]);    		
     break;
     case 83:  //s
     case 40:
-    if (curd[1]==0){
-    	moves.push([0,1]);
-    }
+    	moves[0].push([0,1]);
     break;
     case 65:  //a
     case 37:
-    if (curd[0]==0){
-    	moves.push([-1,0]);
-    }
+    	moves[0].push([-1,0]);
     break;
     case 87:  //w
     case 38:
-    if (curd[1]==0){
-    	moves.push([0,-1]);
-    }
+    	moves[0].push([0,-1]);
     break;
 }
 }
 window.addEventListener("keydown", onKeyDown, false);
 
 
-rx = c[0];
-ry = c[1];
+function nearestPoint(curx, cury, curd){
+	var v = vx;
+	var d = curd[0];
+	var c = curx;
+	if (curd[0]==0){
+		v = vy;
+		d = curd[1];
+		c = cury;
+	}
+	if (d>0){
+		for (var i=0;i<v.length;i++){
+			if (v[i]>c){
+				return v[i];
+			}
+		}	
+	} else {
+		for (var i=v.length;i>0;i--){
+			if (v[i]<c){
+				return v[i];
+			}
+		}	
 
-history.push([rx,ry]);
+	}
+}
+
+
+
+function move(dx, dy, curx, cury){
+	return [
+		(two.width+curx+dx) % two.width,
+		(two.height+cury+dy) % two.height
+	];
+}
+
+function nextXY(dist, i){
+	
+	var curd = curds[i];
+	var curx = body[i].translation.x;
+	var cury = body[i].translation.y;
+	var d = moves[i][0] || curd;
+	var m;
+	var bd;
+
+	if (d.indexOf(0)==curd.indexOf(0)){
+		m = move(dist*curd[0],dist*curd[1], curx, cury);
+		moves[i].shift();
+		bd = curd;
+	} else {
+		var np = nearestPoint(curx, cury, curd);
+		if (curd[0]==0){
+			var ydist = Math.min(Math.abs(dist),Math.abs(np - cury));
+			var xdist = dist-ydist;
+			m = move(xdist*d[0],ydist*curd[1], curx, cury);
+			if (xdist!=0){
+				bd = moves[i].shift();
+				curds[i] = d;
+				if (i<moves.length-1){
+					moves[i+1].push(curds[i]);
+				}
+			}
+		} else {
+			var xdist = Math.min(Math.abs(dist),Math.abs(np - curx));
+			var ydist = dist-xdist;
+			m = move(xdist*curd[0],ydist*d[1], curx, cury);
+			if (ydist!=0){
+				bd = moves[i].shift();
+				curds[i] = d;
+				if (i<moves.length-1){
+					moves[i+1].push(curds[i]);
+				}
+			}
+		}
+	}
+
+	return m;
+}
 
 var speed = 5;
 
-function nearestPoints(){
-	var nx;
-	var ny;
-	for (var i=1;i<vx.length;i++){
-		if (vx[i-1]<=rx && vx[i]>=rx ){
-			nx = {'-1':vx[i-1], '1': vx[i]}
-			break;
-		}
-	}
+var body = [head];
+var moves = [[[1,0]]];
+var curds = [[1,0]];
 
-	for (var i=1;i<vy.length;i++){
-		if (vy[i-1]<=ry && vy[i]>=ry){
-			ny= {'-1':vy[i-1],'1':vy[i]};
-			break;
-		}
-	}
-	return [nx,ny];
-}
-
-
-
-function move(dx,dy){
-	rx=(two.width+rx+dx) % two.width;
-	ry=(two.height+ry+dy) % two.height;
-	r = body[body.length-1].getBoundingClientRect();
-	history.push([rx,ry]);		
-}
-
-function nextXY(dist){
-	//same direction or on the grid
-
-	var d = curd;
-
-	if (moves.length){
-		d = moves[0];
-	}
-
-	if (d.indexOf(0)==curd.indexOf(0)){
-		move(dist*d[0],dist*d[1]);
-		moves.shift();
-	} else {
-
-		var np = nearestPoints();
-		if (curd[0]==0){
-			var ydist = Math.min(Math.abs(dist),Math.abs(np[1][''+curd[1]] - ry));
-			var xdist = dist-ydist;
-			move(xdist*d[0],ydist*curd[1]);
-			if (xdist!=0){
-				curd = moves.shift();
-			}
-		} else {
-			var xdist = Math.min(Math.abs(dist),Math.abs(np[0][''+curd[0]] - rx));
-			var ydist = dist-xdist;
-			move(xdist*curd[0],ydist*d[1]);
-			if (ydist!=0){
-				curd = moves.shift();
-			}
-		}
-	}
-}
+var uc = 0;
 
 two.bind('update', function(frameCount, timeDelta) {
-	var dist = Math.min((timeDelta||0) * speed/10,k);
-	nextXY(dist);
+	uc++;
+	var dist = (timeDelta||0) * speed/10;
 	var l = body.length;
-	var h = history.length-1;
+	grow(k*.3);
+
 	for (var i = 0; i<l;i++){
-		var pos = history[h-i];
-		body[i].translation.set(pos[0], pos[1]);
+		var m = nextXY(dist, i);
+		body[i].translation.set(m[0], m[1]);
 	}
+	if (curds[0][0]==0){
+		head.rotation = curds[0][1]*Math.PI*.5;
+	} else {
+		if (curds[0][0]==1){
+			head.rotation=0;
+		} else {
+			head.rotation = Math.PI;
+		}
+	}
+	
+
+	uc--;
 });
 
 two.update();
 
-setInterval(grow,2000);
 
