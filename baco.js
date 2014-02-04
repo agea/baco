@@ -57,8 +57,6 @@ var gx = g0[0], gy = g0[1];
 
 var vx = [gx-2*k, gx-k], vy = [gy-2*k, gy-k];
 
-var free = [];
-
 var growFactor = 0;
 
 while (gy <= two.height+2*k) {
@@ -67,7 +65,6 @@ while (gy <= two.height+2*k) {
 		if (!_(vx).contains(gx)){
 			vx.push(gx);
 		}
-		free.push([gx,gy]);
 		gx+=k;
 	}
 	vy.push(gy);
@@ -85,6 +82,7 @@ function grow(dist){
 		taild = curds[curds.length-1];
 		curds.push(taild);
 		moves.push([taild]);
+		turns.push(undefined);
 
 		bptr = move(dist*taild[0]*-1,dist*taild[1]*-1, tail.translation.x, tail.translation.y);
 
@@ -96,13 +94,11 @@ function grow(dist){
 
 }
 
-
-window.addEventListener('touchstart', function(event){
+function touch (event) {
 	var x = event.changedTouches[0].pageX;
 	var y = event.changedTouches[0].pageY;
-	var e = {keyCode:39};
 
-	if (curd[0]==0){
+	if (curds[0][0]==0){
 		if(x>c[0]){
 			onKeyDown({keyCode:39});
 		} else {
@@ -116,14 +112,15 @@ window.addEventListener('touchstart', function(event){
 		}
 	}
 
-	onKeyDown(e);
+};
 
-}, false);
+window.addEventListener('touchstart', touch, false);
+window.addEventListener('touchend', touch, false);
 
 
 
 
-function onKeyDown(event){
+function onKeyDown (event) {
 	var keyCode = event.keyCode;
 	switch(keyCode){
     case 68:  //d
@@ -147,7 +144,7 @@ function onKeyDown(event){
 window.addEventListener("keydown", onKeyDown, false);
 
 
-function nearestPoint(curx, cury, curd){
+function nearestPoint (curx, cury, curd) {
 	var v = vx;
 	var d = curd[0];
 	var c = curx;
@@ -190,12 +187,13 @@ function nextXY(dist, i){
 	var m;
 	var bd;
 
-	if (d.indexOf(0)==curd.indexOf(0)){
+	var np = nearestPoint(curx, cury, curd);
+
+	if (d.indexOf(0)==curd.indexOf(0) || (turns[i] && turns[i]!=np) ){
 		m = move(dist*curd[0],dist*curd[1], curx, cury);
 		moves[i].shift();
 		bd = curd;
 	} else {
-		var np = nearestPoint(curx, cury, curd);
 		if (curd[0]==0){
 			var ydist = Math.min(Math.abs(dist),Math.abs(np - cury));
 			var xdist = dist-ydist;
@@ -204,6 +202,7 @@ function nextXY(dist, i){
 				bd = moves[i].shift();
 				curds[i] = d;
 				if (i<moves.length-1){
+					turns[i+1] = np;
 					moves[i+1].push(curds[i]);
 				}
 			}
@@ -215,6 +214,7 @@ function nextXY(dist, i){
 				bd = moves[i].shift();
 				curds[i] = d;
 				if (i<moves.length-1){
+					turns[i+1] = np;
 					moves[i+1].push(curds[i]);
 				}
 			}
@@ -224,24 +224,74 @@ function nextXY(dist, i){
 	return m;
 }
 
+function isInBody(x,y,start){
+	for (var i=start||0;i<body.length;i++){
+		var r = body[i].getBoundingClientRect();
+		if (r.top <= y && r.bottom >= y && r.left <= x && r.right >= x){
+			return true;
+		}
+	}
+	return false;
+}
+
+var target;
+var eaten = 0;
+
+function placeTarget(){
+
+	var x = vx[parseInt(Math.random()*(vx.length-5))+2];
+	var y = vy[parseInt(Math.random()*(vy.length-5))+2];
+	if (isInBody(x,y)){
+		placeTarget();
+	} else {
+		if (target) {
+			two.remove(target);
+		}
+		eaten++;
+		target = two.makeCircle(x,y,k/3);
+		target.fill = '#ff0000';
+	}
+
+
+}
+
 var speed = 5;
 
 var body = [head];
 var moves = [[[1,0]]];
 var curds = [[1,0]];
+var turns = [undefined];
 
 var uc = 0;
 
+placeTarget();
+
+
 two.bind('update', function(frameCount, timeDelta) {
 	uc++;
-	var dist = (timeDelta||0) * speed/10;
+	var dist = Math.min((timeDelta||0) * speed/10,k/2);
 	var l = body.length;
-	grow(k*.3);
+	if (frameCount%10==0) {
+		grow(k/2);
+	}
+
+	var translations = new Array(body.length);
 
 	for (var i = 0; i<l;i++){
 		var m = nextXY(dist, i);
-		body[i].translation.set(m[0], m[1]);
+		body[i].translation.set(m[0],m[1]);
 	}
+	
+	if (isInBody(head.translation.x, head.translation.y, 2)){
+		window.location.href = window.location.href;
+		return;
+	}
+
+	if (isInBody(target.translation.x, target.translation.y)){
+		placeTarget();
+		growFactor = eaten;
+	}
+
 	if (curds[0][0]==0){
 		head.rotation = curds[0][1]*Math.PI*.5;
 	} else {
