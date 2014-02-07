@@ -24,12 +24,12 @@ var two = new Two({
 	type: getType()
 }).appendTo(document.body);
 
-var s = 12;
+var s = 14;
 
 var k = Math.floor(Math.min(two.height, two.width)/s);
 var c = [Math.floor(two.width/2), Math.floor(two.height/2)];
 
-var bounds = two.makeRectangle(c[0],c[1],k*s,k*s);
+var bounds = two.makeRectangle(c[0],c[1],k*(s+1),k*(s+1));
 bounds.fill='#000000';
 bounds.stroke='#cccccc';
 
@@ -70,7 +70,7 @@ function touch (event) {
 	var x = event.changedTouches[0].pageX;
 	var y = event.changedTouches[0].pageY;
 
-	if (curds[0][0]==0){
+	if (curd[0]==0){
 		if(x>c[0]){
 			onKeyDown({keyCode:39});
 		} else {
@@ -118,11 +118,9 @@ window.addEventListener("keydown", onKeyDown, false);
 function grow(dist){
 	if (growFactor>0){
 		var tail = body[body.length-1]
-		var bp = two.makeCircle(c[0], c[1], k/2.2);
+		var bp = two.makeCircle(tail.translation.x, tail.translation.y, k/1.9);
 		bp.fill = '#ffff00';
-		bp.linewidth = 2;
-		bp.stroke = 'rgba(128,64,0,0.8)';
-		bp.translation.set(tail.translation.x, tail.translation.y);
+		bp.linewidth = 0;
 		body.push(bp);	
 		growFactor--;		
 	}
@@ -140,7 +138,7 @@ function move(){
 	var l = body.length;
 	grow();
 	for (var i = l - 1; i >= 1; i--) {
-		body[i].translation.set(body[i-1].translation.x,body[i-1].translation.x);
+		body[i].translation.set(body[i-1].translation.x,body[i-1].translation.y);
 	}
 
 	var nxi = vx.indexOf(body[0].translation.x) + d[0];
@@ -189,7 +187,7 @@ function placeTarget(){
 
 
 }
-var speed = 10;
+var speed = 8;
 
 var body = [head];
 var moves = [[1,0]];
@@ -198,7 +196,7 @@ var curd = [1,0];
 
 placeTarget();
 var pause;
-
+alert("Use arrow keys, WASD, or touch the screen to move");
 two.bind('update', _(function(frameCount, timeDelta) {
 	if (pause){
 		return;
@@ -210,7 +208,7 @@ two.bind('update', _(function(frameCount, timeDelta) {
 	move();
 
 	if (isInBody(head.translation.x, head.translation.y, 1)){
-		alert("SCORE: " + body.length);
+		alert(body.length);
 		window.location.href = window.location.href;
 		return;
 	}
