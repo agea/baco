@@ -17,10 +17,6 @@ function getType(){
 	}
 }
 
-var log = function(){};
-if (console){
-	log = console.log;
-}
 
 var two = new Two({
 	fullscreen:true,
@@ -28,14 +24,16 @@ var two = new Two({
 	type: getType()
 }).appendTo(document.body);
 
+var s = 12;
 
+var k = Math.floor(Math.min(two.height, two.width)/s);
+var c = [Math.floor(two.width/2), Math.floor(two.height/2)];
 
+var bounds = two.makeRectangle(c[0],c[1],k*s,k*s);
+bounds.fill='#000000';
+bounds.stroke='#cccccc';
 
-var k = Math.min(two.height, two.width)/10;
-var c = [two.width/2, two.height/2];
-
-
-var headC = two.makeCircle(0, 0, k/1.8);
+var headC = two.makeCircle(0, 0, k/1.9);
 headC.fill = '#ffff00';
 headC.linewidth = 1;
 //head.noStroke();
@@ -51,47 +49,21 @@ var head =  two.makeGroup(headC, eye1, eye2);
 
 head.translation.set(c[0],c[1]);
 
-var g0 = [c[0]-parseInt(c[0]/k)*k, c[1]-parseInt(c[1]/k)*k];
+var g0 = [Math.floor(c[0]-(s/2)*k), Math.floor(c[1]-(s/2)*k)];
 
 var gx = g0[0], gy = g0[1];
 
-var vx = [gx-2*k, gx-k], vy = [gy-2*k, gy-k];
+var vx = [], vy = [];
 
 var growFactor = 0;
 
-while (gy <= two.height+2*k) {
-	gx = g0[0];
-	while(gx <= two.width+2*k){
-		if (!_(vx).contains(gx)){
-			vx.push(gx);
-		}
-		gx+=k;
-	}
+while (gy <= c[1]+(s/2)*k) {
 	vy.push(gy);
 	gy+=k;
 }
-
-function grow(dist){
-	if (growFactor>0){
-		var tail = body[body.length-1]
-		var bp = two.makeCircle(c[0], c[1], k/2.2);
-		bp.fill = '#ffff00';
-		bp.linewidth = 2;
-		//head.noStroke();
-		bp.stroke = 'rgba(128,64,0,0.8)';
-		taild = curds[curds.length-1];
-		curds.push(taild);
-		moves.push([taild]);
-		turns.push(undefined);
-
-		bptr = move(dist*taild[0]*-1,dist*taild[1]*-1, tail.translation.x, tail.translation.y);
-
-		bp.translation.set(bptr[0], bptr[1]);
-
-		body.push(bp);	
-		growFactor--;		
-	}
-
+while(gx <= c[0]+(s/2)*k){
+	vx.push(gx);
+	gx+=k;
 }
 
 function touch (event) {
@@ -115,119 +87,82 @@ function touch (event) {
 };
 
 window.addEventListener('touchstart', touch, false);
-window.addEventListener('touchend', touch, false);
-
-
-
 
 function onKeyDown (event) {
 	var keyCode = event.keyCode;
 	switch(keyCode){
-    case 68:  //d
-    case 39:
-    	moves[0].push([1,0]);    		
-    break;
-    case 83:  //s
-    case 40:
-    	moves[0].push([0,1]);
-    break;
-    case 65:  //a
-    case 37:
-    	moves[0].push([-1,0]);
-    break;
-    case 87:  //w
-    case 38:
-    	moves[0].push([0,-1]);
-    break;
-}
+	    case 68:  //d
+	    case 39:
+	    	moves.push([1,0]);    		
+	    break;
+	    case 83:  //s
+	    case 40:
+	    	moves.push([0,1]);
+	    break;
+	    case 65:  //a
+	    case 37:
+	    	moves.push([-1,0]);
+	    break;
+	    case 87:  //w
+	    case 38:
+	    	moves.push([0,-1]);
+	    break;
+	    case 32:
+	    	pause = true;
+	    break;
+	}
 }
 window.addEventListener("keydown", onKeyDown, false);
 
 
-function nearestPoint (curx, cury, curd) {
-	var v = vx;
-	var d = curd[0];
-	var c = curx;
-	if (curd[0]==0){
-		v = vy;
-		d = curd[1];
-		c = cury;
+function grow(dist){
+	if (growFactor>0){
+		var tail = body[body.length-1]
+		var bp = two.makeCircle(c[0], c[1], k/2.2);
+		bp.fill = '#ffff00';
+		bp.linewidth = 2;
+		bp.stroke = 'rgba(128,64,0,0.8)';
+		bp.translation.set(tail.translation.x, tail.translation.y);
+		body.push(bp);	
+		growFactor--;		
 	}
-	if (d>0){
-		for (var i=0;i<v.length;i++){
-			if (v[i]>c){
-				return v[i];
-			}
-		}	
-	} else {
-		for (var i=v.length;i>0;i--){
-			if (v[i]<c){
-				return v[i];
-			}
-		}	
 
-	}
 }
 
+function move(){
+	var d = moves[0] || curd;
+	if (d.indexOf(0)==curd.indexOf(0)){
+		d = curd;
+	}
+	moves.shift();
+	curd = d;
 
-
-function move(dx, dy, curx, cury){
-	return [
-		(two.width+curx+dx) % two.width,
-		(two.height+cury+dy) % two.height
-	];
-}
-
-function nextXY(dist, i){
-	
-	var curd = curds[i];
-	var curx = body[i].translation.x;
-	var cury = body[i].translation.y;
-	var d = moves[i][0] || curd;
-	var m;
-	var bd;
-
-	var np = nearestPoint(curx, cury, curd);
-
-	if (d.indexOf(0)==curd.indexOf(0) || (turns[i] && turns[i]!=np) ){
-		m = move(dist*curd[0],dist*curd[1], curx, cury);
-		moves[i].shift();
-		bd = curd;
-	} else {
-		if (curd[0]==0){
-			var ydist = Math.min(Math.abs(dist),Math.abs(np - cury));
-			var xdist = dist-ydist;
-			m = move(xdist*d[0],ydist*curd[1], curx, cury);
-			if (xdist!=0){
-				bd = moves[i].shift();
-				curds[i] = d;
-				if (i<moves.length-1){
-					turns[i+1] = np;
-					moves[i+1].push(curds[i]);
-				}
-			}
-		} else {
-			var xdist = Math.min(Math.abs(dist),Math.abs(np - curx));
-			var ydist = dist-xdist;
-			m = move(xdist*curd[0],ydist*d[1], curx, cury);
-			if (ydist!=0){
-				bd = moves[i].shift();
-				curds[i] = d;
-				if (i<moves.length-1){
-					turns[i+1] = np;
-					moves[i+1].push(curds[i]);
-				}
-			}
-		}
+	var l = body.length;
+	grow();
+	for (var i = l - 1; i >= 1; i--) {
+		body[i].translation.set(body[i-1].translation.x,body[i-1].translation.x);
 	}
 
-	return m;
+	var nxi = vx.indexOf(body[0].translation.x) + d[0];
+	if (nxi<0){
+		nxi = vx.length-1;
+	} else if (nxi >= vx.length){
+		nxi=0;
+	}
+	var nyi = vy.indexOf(body[0].translation.y) + d[1];
+	if (nyi<0){
+		nyi = vy.length-1;
+	} else if (nyi >= vy.length){
+		nyi=0;
+	}
+	body[0].translation.set(vx[nxi], vy[nyi]);
+
 }
 
 function isInBody(x,y,start){
 	for (var i=start||0;i<body.length;i++){
-		var r = body[i].getBoundingClientRect();
-		if (r.top <= y && r.bottom >= y && r.left <= x && r.right >= x){
+		var t = body[i].translation;
+		if (t.x==x && t.y==y){
 			return true;
 		}
 	}
@@ -254,35 +189,28 @@ function placeTarget(){
 
 
 }
-
-var speed = 5;
+var speed = 10;
 
 var body = [head];
-var moves = [[[1,0]]];
-var curds = [[1,0]];
-var turns = [undefined];
+var moves = [[1,0]];
+var curd = [1,0];
 
-var uc = 0;
 
 placeTarget();
+var pause;
 
+two.bind('update', _(function(frameCount, timeDelta) {
+	if (pause){
+		return;
+	}
 
-two.bind('update', function(frameCount, timeDelta) {
-	uc++;
-	var dist = Math.min((timeDelta||0) * speed/10,k/2);
+	var dist = Math.floor(Math.min((timeDelta||0) * speed/10,k/2));
 	var l = body.length;
-	if (frameCount%10==0) {
-		grow(k/2);
-	}
 
-	var translations = new Array(body.length);
+	move();
 
-	for (var i = 0; i<l;i++){
-		var m = nextXY(dist, i);
-		body[i].translation.set(m[0],m[1]);
-	}
-	
-	if (isInBody(head.translation.x, head.translation.y, 2)){
+	if (isInBody(head.translation.x, head.translation.y, 1)){
+		alert("SCORE: " + body.length);
 		window.location.href = window.location.href;
 		return;
 	}
@@ -292,19 +220,18 @@ two.bind('update', function(frameCount, timeDelta) {
 		growFactor = eaten;
 	}
 
-	if (curds[0][0]==0){
-		head.rotation = curds[0][1]*Math.PI*.5;
+	if (curd[0]==0){
+		head.rotation = curd[1]*Math.PI*.5;
 	} else {
-		if (curds[0][0]==1){
+		if (curd[0]==1){
 			head.rotation=0;
 		} else {
 			head.rotation = Math.PI;
 		}
 	}
 	
+}).throttle(1000/speed));
 
-	uc--;
-});
 
 two.update();
 
