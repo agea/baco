@@ -9,14 +9,11 @@ function getType(){
 		if (canvas.getContext('2d')){
 			return Two.Types.canvas;
 		}
-
 	}
-
 	if (document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#Shape", "1.0")){
 		return Two.Types.svg;
 	}
 }
-
 
 var two = new Two({
 	fullscreen:true,
@@ -24,19 +21,18 @@ var two = new Two({
 	type: getType()
 }).appendTo(document.body);
 
-var s = 14;
+var s = 10;
 
 var k = Math.floor(Math.min(two.height, two.width)/s);
 var c = [Math.floor(two.width/2), Math.floor(two.height/2)];
 
 var bounds = two.makeRectangle(c[0],c[1],k*(s+1),k*(s+1));
 bounds.fill='#000000';
-bounds.stroke='#cccccc';
+bounds.stroke='#111111';
 
 var headC = two.makeCircle(0, 0, k/1.9);
 headC.fill = '#ffff00';
 headC.linewidth = 1;
-//head.noStroke();
 headC.stroke = 'rgba(0,0,0,0.5)';
 
 var eye1 = two.makeCircle(k/4,k/4, k/8);
@@ -46,7 +42,6 @@ var eye2 = two.makeCircle(k/4,-k/4, k/8);
 eye2.fill='#000000';
 
 var head =  two.makeGroup(headC, eye1, eye2);
-
 head.translation.set(c[0],c[1]);
 
 var g0 = [Math.floor(c[0]-(s/2)*k), Math.floor(c[1]-(s/2)*k)];
@@ -107,13 +102,9 @@ function onKeyDown (event) {
 	    case 38:
 	    	moves.push([0,-1]);
 	    break;
-	    case 32:
-	    	pause = true;
-	    break;
 	}
 }
 window.addEventListener("keydown", onKeyDown, false);
-
 
 function grow(dist){
 	if (growFactor>0){
@@ -137,8 +128,13 @@ function move(){
 
 	var l = body.length;
 	grow();
-	for (var i = l - 1; i >= 1; i--) {
-		body[i].translation.set(body[i-1].translation.x,body[i-1].translation.y);
+	for (var i = l-1; i >= 1; i--) {
+		new TWEEN.Tween(body[i].translation)
+			.to({
+				x:body[i-1].translation.x,
+				y:body[i-1].translation.y},throttle)
+			.start();
+		//body[i].translation.set(body[i-1].translation.x,body[i-1].translation.y);
 	}
 
 	var nxi = vx.indexOf(body[0].translation.x) + d[0];
@@ -153,7 +149,13 @@ function move(){
 	} else if (nyi >= vy.length){
 		nyi=0;
 	}
-	body[0].translation.set(vx[nxi], vy[nyi]);
+	new TWEEN.Tween(body[0].translation)
+			.to({
+				x:vx[nxi],
+				y:vy[nyi]},throttle)
+			.onComplete(calcMovement)
+			.start();
+	//body[0].translation.set(vx[nxi], vy[nyi]);
 
 }
 
@@ -187,7 +189,8 @@ function placeTarget(){
 
 
 }
-var speed = 8;
+var speed = s/2;
+var throttle = 1000/speed;
 
 var body = [head];
 var moves = [[1,0]];
@@ -195,20 +198,15 @@ var curd = [1,0];
 
 
 placeTarget();
-var pause;
 alert("Use arrow keys, WASD, or touch the screen to move");
-two.bind('update', _(function(frameCount, timeDelta) {
-	if (pause){
-		return;
-	}
 
-	var dist = Math.floor(Math.min((timeDelta||0) * speed/10,k/2));
+calcMovement =  function() {
+	
 	var l = body.length;
 
-	move();
 
 	if (isInBody(head.translation.x, head.translation.y, 1)){
-		alert(body.length);
+		alert((body.length/(s*s)).toFixed(2)*100);
 		window.location.href = window.location.href;
 		return;
 	}
@@ -217,6 +215,8 @@ two.bind('update', _(function(frameCount, timeDelta) {
 		placeTarget();
 		growFactor = eaten;
 	}
+
+	move();
 
 	if (curd[0]==0){
 		head.rotation = curd[1]*Math.PI*.5;
@@ -228,9 +228,11 @@ two.bind('update', _(function(frameCount, timeDelta) {
 		}
 	}
 	
-}).throttle(1000/speed));
+};
 
+two.bind('update',function(){
+	TWEEN.update();
+}).play();
 
-two.update();
-
-
+calcMovement();
+//two.update();
