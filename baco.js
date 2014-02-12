@@ -32,8 +32,8 @@ bounds.stroke='#111111';
 
 var headC = two.makeCircle(0, 0, k/1.9);
 headC.fill = '#ffff00';
-headC.linewidth = 1;
-headC.stroke = 'rgba(0,0,0,0.5)';
+headC.noStroke();
+
 
 var eye1 = two.makeCircle(k/4,k/4, k/8);
 eye1.fill='#000000';
@@ -111,11 +111,15 @@ function grow(dist){
 		var tail = body[body.length-1]
 		var bp = two.makeCircle(tail.translation.x, tail.translation.y, k/1.9);
 		bp.fill = '#ffff00';
-		bp.linewidth = 0;
+		bp.noStroke();
 		body.push(bp);	
 		growFactor--;		
 	}
 
+}
+
+function step(k){
+	return 1;
 }
 
 function move(){
@@ -128,34 +132,59 @@ function move(){
 
 	var l = body.length;
 	grow();
-	for (var i = l-1; i >= 1; i--) {
+	var h = history.length;
+	for (var i = 1; i<l; i++) {
+
+		var jump = history[h-i][2];
 		new TWEEN.Tween(body[i].translation)
 			.to({
-				x:body[i-1].translation.x,
-				y:body[i-1].translation.y},throttle)
+				x:history[h-i][0],
+				y:history[h-i][1]},throttle)
+			.easing(jump ? step : TWEEN.Easing.Linear.None)
 			.start();
+		if (jump){
+			body[i].fill='rgba(0,0,0,0)';
+		} else {
+			body[i].fill='#ffff00';
+		}
 		//body[i].translation.set(body[i-1].translation.x,body[i-1].translation.y);
 	}
+
+	var jump = false;
 
 	var nxi = vx.indexOf(body[0].translation.x) + d[0];
 	if (nxi<0){
 		nxi = vx.length-1;
+		jump = true;
 	} else if (nxi >= vx.length){
 		nxi=0;
+		jump = true;
 	}
 	var nyi = vy.indexOf(body[0].translation.y) + d[1];
 	if (nyi<0){
 		nyi = vy.length-1;
+		jump = true;
 	} else if (nyi >= vy.length){
 		nyi=0;
+		jump = true;
+	}
+	history.push([vx[nxi], vy[nyi],jump]);
+	if (history.length>body.length){
+		history.shift();
 	}
 	new TWEEN.Tween(body[0].translation)
 			.to({
 				x:vx[nxi],
 				y:vy[nyi]},throttle)
+			.easing(jump ? step : TWEEN.Easing.Linear.None)
 			.onComplete(calcMovement)
 			.start();
-	//body[0].translation.set(vx[nxi], vy[nyi]);
+		if (jump){
+			headC.fill='rgba(0,0,0,0)';
+		} else {
+			headC.fill='#ffff00';
+		}
+
 
 }
 
@@ -195,12 +224,14 @@ var throttle = 1000/speed;
 var body = [head];
 var moves = [[1,0]];
 var curd = [1,0];
+var delays = [];
 
+var history = [];
 
 placeTarget();
 alert("Use arrow keys, WASD, or touch the screen to move");
 
-calcMovement =  function() {
+function calcMovement() {
 	
 	var l = body.length;
 
