@@ -27,6 +27,18 @@ var baco = _(function(){
 
 	var s = 12;
 
+	var speed = s/1.5;
+	var throttle = 1000/speed;
+
+	var eaten = -1;
+	var growFactor = 0;
+
+	var moves = [[1,0]];
+	var curd = [1,0];
+	var delays = [];
+
+	var history = [];
+
 	var k = Math.floor(Math.min(two.height, two.width)/s);
 	var c = [Math.floor(two.width/2), Math.floor(two.height/2)];
 
@@ -34,10 +46,12 @@ var baco = _(function(){
 	bounds.fill='#000000';
 	bounds.stroke='#111111';
 
+	var target = two.makeCircle(0,0,k/3);
+	target.fill = '#ff0000';
+
 	var headC = two.makeCircle(0, 0, k/1.9);
 	headC.fill = '#ffff00';
 	headC.noStroke();
-
 
 	var eye1 = two.makeCircle(k/4,k/4, k/8);
 	eye1.fill='#000000';
@@ -48,13 +62,13 @@ var baco = _(function(){
 	var head =  two.makeGroup(headC, eye1, eye2);
 	head.translation.set(c[0],c[1]);
 
+	var body = [head];
+
 	var g0 = [Math.floor(c[0]-(s/2)*k), Math.floor(c[1]-(s/2)*k)];
 
 	var gx = g0[0], gy = g0[1];
 
 	var vx = [], vy = [];
-
-	var growFactor = 0;
 
 	while (gy <= c[1]+(s/2)*k) {
 		vy.push(gy);
@@ -95,8 +109,6 @@ var baco = _(function(){
 
 	};
 
-	window.addEventListener('touchstart', touch, false);
-
 	function onKeyDown (event) {
 		var keyCode = event.keyCode;
 		switch(keyCode){
@@ -118,7 +130,6 @@ var baco = _(function(){
 		    break;
 		}
 	}
-	window.addEventListener("keydown", onKeyDown, false);
 
 	function grow(dist){
 		if (growFactor>0){
@@ -212,8 +223,6 @@ var baco = _(function(){
 		return false;
 	}
 
-	var target;
-	var eaten = 0;
 
 	function placeTarget(){
 
@@ -227,27 +236,12 @@ var baco = _(function(){
 
 		var i = Math.floor(Math.random()*free.length);
 
-		if (!target) {
-			target = two.makeCircle(0,0,k/3);
-			target.fill = '#ff0000';
-		}
-
 		target.translation.set(Math.floor(free[i]/1000000),free[i]%1000000);
 		eaten++;
 
 	}
 
-	var speed = s/1.5;
-	var throttle = 1000/speed;
 
-	var body = [head];
-	var moves = [[1,0]];
-	var curd = [1,0];
-	var delays = [];
-
-	var history = [];
-
-	placeTarget();
 
 	function calcMovement() {
 		
@@ -255,7 +249,7 @@ var baco = _(function(){
 
 
 		if (isInBody(head.translation.x, head.translation.y, 1)){
-			$('#score').html(Math.floor((body.length/(s*s))*100))
+			$('#score').html(eaten);
 			$('#modal').modal();
 			cycle.pause();
 			window.addEventListener("keydown", function(){
@@ -285,8 +279,12 @@ var baco = _(function(){
 	var cycle = two.bind('update',function(){
 		TWEEN.update();
 	});
-	cycle.play();
 
-	calcMovement();	
+	window.addEventListener('touchstart', touch, false);
+	window.addEventListener("keydown", onKeyDown, false);
+
+	placeTarget();
+	cycle.play();
+	calcMovement();
 
 }).once();
