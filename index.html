@@ -1,15 +1,65 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 	<head>
-        <meta name="viewport" content="width=device-width, user-scalable=no" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-        <title>Baco by agea</title>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<title>Baco by agea</title>
 		<script src="two.min.js"></script>
 		<script src="tween.js"></script>
-	</head>
-	<body style="background: #222222">
-		<div id="two"></div>
 		<script src="baco.js"></script>
+
+		<!-- Bootstrap -->
+		<link href="css/bootstrap.min.css" rel="stylesheet">
+	</head>    
+	<body>
+
+		<div class="container">
+			<a href="https://github.com/agea/baco">
+				<img style="position: absolute; top: 0; right: 0; border: 0;" 
+					src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png"
+					alt="Fork me on GitHub">
+			</a>			
+			<div class="row">
+				<div class="col-md-6 col-md-offset-3">				
+					<h1>Baco.js</h1>
+					<hr>
+					<p class="lead">Use arrow keys, WASD, or touch the screen to move</p>
+					<hr>
+					<a href="javascript:void(0);" 
+						autofocus
+						onclick="baco();"
+						class="btn btn-primary btn-lg btn-block">
+						Press any key or click here to start
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal -->
+		<div class="modal fade" id="modal" tabindex="-1" role="dialog">
+		  <div class="modal-dialog">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <h4 class="modal-title" id="myModalLabel">Score</h4>
+		      </div>
+		      <div class="modal-body">
+		        <h1 style="text-align:center;" id="score">0</h1>
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-default" 
+		        	onclick="window.location.href = window.location.href">OK</button>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+
+	    <script src="js/jquery.min.js"></script>
+	    <script src="js/bootstrap.min.js"></script>
+	    <script type="text/javascript">
+	    	window.addEventListener("keydown", baco, false);
+	    </script>
 	</body>
 </html>
