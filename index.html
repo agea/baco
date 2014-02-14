@@ -28,12 +28,26 @@
 					<hr>
 					<p class="lead">Use arrow keys, WASD, or touch the screen to move</p>
 					<hr>
-					<a href="javascript:void(0);" 
-						autofocus
-						onclick="baco();"
-						class="btn btn-primary btn-lg btn-block">
-						Press any key or click here to start
-					</a>
+					<p class="lead">Select game mode</p>
+					<hr>
+					<div class="row">
+						<div class="col-xs-6">
+							<a href="javascript:void(0);" 
+								autofocus
+								onclick="baco(1);"
+								class="btn btn-primary btn-lg btn-block">
+								1
+							</a>
+						</div>
+						<div class="col-xs-6">
+							<a href="javascript:void(0);" 
+								autofocus
+								onclick="baco(2);"
+								class="btn btn-primary btn-lg btn-block">
+								2
+							</a>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -59,7 +73,9 @@
 	    <script src="js/jquery.min.js"></script>
 	    <script src="js/bootstrap.min.js"></script>
 	    <script type="text/javascript">
-	    	window.addEventListener("keydown", baco, false);
+	    	window.addEventListener("keydown", function(e){
+	    		baco(e.keyCode-48);
+	    	}, false);
 	    </script>
 	</body>
 </html>

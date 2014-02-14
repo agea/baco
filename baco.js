@@ -1,4 +1,8 @@
-var baco = _(function(){
+var baco = _(function(mode){
+
+	if (mode !=2){
+		mode=1;
+	}
 
 	$('.container').remove();
 
@@ -38,6 +42,8 @@ var baco = _(function(){
 	var delays = [];
 
 	var history = [];
+
+	var releases = [];
 
 	var k = Math.floor(Math.min(two.height, two.width)/s);
 	var c = [Math.floor(two.width/2), Math.floor(two.height/2)];
@@ -131,16 +137,37 @@ var baco = _(function(){
 		}
 	}
 
+	function growBody(){
+		var tail = body[body.length-1]
+		var bp = two.makeCircle(tail.translation.x, tail.translation.y, k/1.9);
+		bp.fill = '#ffff00';
+		bp.noStroke();
+		body.push(bp);	
+	}
+
+	function release(){
+		if (growFactor==1){
+			growBody();
+		}
+		var tail = body[body.length-1]
+		releases.push([tail.translation.x,tail.translation.y]);
+		var d = [[2,2],[-2,2],[2,-2],[-2,-2]][Math.floor(Math.random()*4)]
+
+		var r = two.makeCircle(tail.translation.x+d[0], tail.translation.y+d[1],k/3);
+		r.fill="#a05000";
+		r.noStroke();
+
+	}
+
 	function grow(dist){
 		if (growFactor>0){
-			var tail = body[body.length-1]
-			var bp = two.makeCircle(tail.translation.x, tail.translation.y, k/1.9);
-			bp.fill = '#ffff00';
-			bp.noStroke();
-			body.push(bp);	
+			if (mode==1){
+				growBody();
+			} else {
+				release();
+			}
 			growFactor--;		
 		}
-
 	}
 
 	function step(k){
@@ -220,6 +247,14 @@ var baco = _(function(){
 				return true;
 			}
 		}
+		if (start==1){
+			for (var i=0;i<releases.length;i++){
+				var h = head.translation;
+				if (releases[i][0]==h.x && releases[i][1]==h.y){
+					return true;
+				}
+			}
+		}
 		return false;
 	}
 
@@ -228,6 +263,9 @@ var baco = _(function(){
 
 		var mb = _(body).map(function(b){
 			return 1000000*b.translation.x+b.translation.y;
+		});
+		_(releases).each(function(r){
+			mb.push(r[0]*1000000+r[1]);
 		});
 
 		var free = grid.filter(function(g){
