@@ -153,7 +153,7 @@ var baco = _(function(mode){
 		releases.push([tail.translation.x,tail.translation.y]);
 		var d = [[2,2],[-2,2],[2,-2],[-2,-2]][Math.floor(Math.random()*4)]
 
-		var r = two.makeCircle(tail.translation.x+d[0], tail.translation.y+d[1],k/3);
+		var r = two.makeCircle(tail.translation.x+d[0], tail.translation.y+d[1],k/2+2);
 		r.fill="#a05000";
 		r.noStroke();
 
